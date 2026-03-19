@@ -21,7 +21,7 @@ router.post('/login', (req, res) => {
 
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000
   });
@@ -39,8 +39,6 @@ router.post('/logout', (req, res) => {
 router.get('/me', auth, (req, res) => {
   res.json({ admin: req.admin });
 });
-
-// ── Gestão de admins (autenticado) ──
 
 // GET /api/auth/admins
 router.get('/admins', auth, (req, res) => {
