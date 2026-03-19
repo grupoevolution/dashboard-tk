@@ -2,7 +2,6 @@
 // DASH.JS — Dashboard Frontend
 // ══════════════════════════════════════════════
 
-// ── Chart defaults ──
 Chart.defaults.color = '#5a5a6a';
 Chart.defaults.borderColor = '#2a2a32';
 Chart.defaults.font.family = "'Geist Mono', monospace";
@@ -19,7 +18,6 @@ const DAYS = Array.from({length:15},(_,i)=>String(i*2+1).padStart(2,'0'));
 let charts = {};
 let currentPage = 'resumo';
 
-// ── Filtros ──
 function getFilters() {
   return {
     periodo:   document.getElementById('f-periodo')?.value   || '30d',
@@ -46,7 +44,6 @@ function updateTimestamp() {
   }, 1000);
 }
 
-// ── Navigation ──
 function showPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -71,10 +68,9 @@ function loadPage(id) {
   if (id === 'config')     loadConfig();
 }
 
-// ── API helper ──
 async function api(path) {
   try {
-    const r = await fetch('/api/' + path);
+    const r = await fetch('/api/' + path, { credentials: 'include' });
     if (r.status === 401) { window.location.href = '/login'; return null; }
     return await r.json();
   } catch { return null; }
@@ -84,7 +80,6 @@ function qs(obj) {
   return Object.entries(obj).filter(([,v]) => v).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
 }
 
-// ── Format ──
 function fBRL(v) {
   if (v === null || v === undefined) return 'R$ 0';
   if (v >= 1000000) return 'R$ ' + (v/1000000).toFixed(2).replace('.',',') + 'M';
@@ -94,7 +89,6 @@ function fBRL(v) {
 function fNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
 function fPct(v) { return Number(v||0).toFixed(1) + '%'; }
 
-// ── KPI builder ──
 function buildKPI(label, val, delta, sub, icon='') {
   const cls = delta === null ? 'nt' : (delta >= 0 ? 'up' : 'dn');
   const arrow = delta === null ? '' : (delta >= 0 ? '<i class="fas fa-arrow-up"></i> ' : '<i class="fas fa-arrow-down"></i> ');
@@ -106,7 +100,6 @@ function buildKPI(label, val, delta, sub, icon='') {
   </div>`;
 }
 
-// ── Funil builder ──
 function buildFunil(steps) {
   const max = steps[0]?.valor || 1;
   return `<div class="funnel">${steps.map((s, i) => {
@@ -131,7 +124,6 @@ function buildFunil(steps) {
   }).join('')}</div>`;
 }
 
-// ── Chart helpers ──
 function destroyChart(id) {
   if (charts[id]) { charts[id].destroy(); delete charts[id]; }
 }
@@ -197,11 +189,6 @@ function hexToRgb(hex) {
   return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '91,124,255';
 }
 
-// ══════════════════════════════
-// PAGE LOADERS
-// ══════════════════════════════
-
-// ── RESUMO ──
 async function loadResumo() {
   const f = getFilters();
   const [kpis, diario, horario, semana, whStatus] = await Promise.all([
@@ -213,14 +200,12 @@ async function loadResumo() {
   ]);
   if (!kpis) return;
 
-  // KPIs
   document.getElementById('kpi-resumo').innerHTML =
     buildKPI('Faturamento Bruto',   fBRL(kpis.faturamento_bruto),   12, 'vs. período anterior', 'fas fa-circle-dollar-to-slot') +
     buildKPI('Total Vendas',         fNum(kpis.total_vendas),         8,  'vs. período anterior', 'fas fa-check-circle') +
     buildKPI('Ticket Médio',         fBRL(kpis.ticket_medio),        null,'—',                    'fas fa-tag') +
     buildKPI('Reembolsos',           fBRL(kpis.reembolsos_valor),    null,`${kpis.reembolsos_qtd} pedidos`, 'fas fa-rotate-left');
 
-  // Gráfico diário
   if (diario) {
     const plataformas = ['kiwify','ticto','lastlink'];
     const labels = [...new Set(diario.map(d=>d.dia))].sort();
@@ -234,7 +219,6 @@ async function loadResumo() {
     );
   }
 
-  // Donut plataformas
   if (kpis.por_plataforma?.length) {
     donutChart('c-plat-donut',
       kpis.por_plataforma.map(p=>p.plataforma),
@@ -254,18 +238,12 @@ async function loadResumo() {
     }).join('');
   }
 
-  // Horário
   if (horario) barChart('c-horario', horario.map(h=>h.hora+'h'), horario.map(h=>h.vendas), ACC);
-
-  // Semana
   if (semana) barChart('c-semana', semana.map(s=>s.dia), semana.map(s=>s.vendas), ACC);
 
-  // Webhooks
   if (whStatus) {
     document.getElementById('wh-status-list').innerHTML = whStatus.map(w => {
-      const mins = w.ultimo_evento
-        ? Math.floor((Date.now() - new Date(w.ultimo_evento))/60000)
-        : null;
+      const mins = w.ultimo_evento ? Math.floor((Date.now() - new Date(w.ultimo_evento))/60000) : null;
       const dotCls = mins === null ? 'off' : mins < 30 ? 'on' : mins < 120 ? 'warn' : 'off';
       const tempo = mins === null ? 'Nenhum evento' : mins < 1 ? 'Agora' : `${mins} min atrás`;
       return `<div class="wh-item">
@@ -278,7 +256,6 @@ async function loadResumo() {
   }
 }
 
-// ── META / GOOGLE / TIKTOK (reutiliza funil) ──
 async function loadPlatforma(plataforma) {
   const f = { ...getFilters(), plataforma };
   const [kpis, funil, diario] = await Promise.all([
@@ -302,9 +279,8 @@ function renderKPIs6(containerId, kpis) {
 }
 
 async function loadMeta() {
-  const { kpis, funil, diario } = await loadPlatforma('kiwify'); // usa kiwify como proxy Meta
+  const { kpis, funil, diario } = await loadPlatforma('kiwify');
   renderKPIs6('kpi-meta', kpis);
-
   if (funil) {
     document.getElementById('funil-meta').innerHTML = buildFunil([
       { label:'Cliques no Anúncio', valor: funil.cliques },
@@ -314,28 +290,18 @@ async function loadMeta() {
       { label:'Vendas Aprovadas',   valor: funil.vendas_aprovadas },
     ]);
   }
-
   if (kpis?.por_metodo_pagamento) {
-    donutChart('c-pgto-meta',
-      kpis.por_metodo_pagamento.map(m=>m.metodo||'outro'),
-      kpis.por_metodo_pagamento.map(m=>m.qtd),
-      [ACC, G1, G2]
-    );
+    donutChart('c-pgto-meta', kpis.por_metodo_pagamento.map(m=>m.metodo||'outro'), kpis.por_metodo_pagamento.map(m=>m.qtd), [ACC, G1, G2]);
   }
-
   document.getElementById('pos-meta').innerHTML = `<div class="src-list">
     <div class="src-row"><div class="src-icon"><i class="fas fa-rectangle-vertical"></i></div><div class="src-info"><div class="src-name">Stories</div><div class="src-bar-track"><div class="src-bar-fill" style="width:72%"></div></div></div><div class="src-val">392</div></div>
     <div class="src-row"><div class="src-icon"><i class="fas fa-image"></i></div><div class="src-info"><div class="src-name">Feed</div><div class="src-bar-track"><div class="src-bar-fill" style="width:54%"></div></div></div><div class="src-val">294</div></div>
     <div class="src-row"><div class="src-icon"><i class="fas fa-film"></i></div><div class="src-info"><div class="src-name">Reels</div><div class="src-bar-track"><div class="src-bar-fill" style="width:40%"></div></div></div><div class="src-val">218</div></div>
   </div>`;
-
   if (diario) {
     const labels = [...new Set(diario.map(d=>d.dia))].sort().map(d=>d.substring(5).replace('-','/'));
-    lineChart('c-gasto-fat-meta', labels, [
-      { label:'Faturamento', data: diario.filter(d=>d.plataforma==='kiwify').map(d=>d.faturamento), color:ACC },
-    ]);
+    lineChart('c-gasto-fat-meta', labels, [{ label:'Faturamento', data: diario.filter(d=>d.plataforma==='kiwify').map(d=>d.faturamento), color:ACC }]);
   }
-
   const porProd = await api(`dashboard/por-produto?plataforma=kiwify&${qs(getFilters())}`);
   if (porProd?.length) barChart('c-prod-meta', porProd.map(p=>p.produto), porProd.map(p=>p.faturamento), ACC, true);
 }
@@ -351,9 +317,7 @@ async function loadGoogle() {
   ]);
   if (diario) {
     const labels = [...new Set(diario.map(d=>d.dia))].sort().map(d=>d.substring(5).replace('-','/'));
-    lineChart('c-google-evol', labels, [
-      { label:'Faturamento', data: diario.filter(d=>d.plataforma==='ticto').map(d=>d.faturamento), color:ACC },
-    ]);
+    lineChart('c-google-evol', labels, [{ label:'Faturamento', data: diario.filter(d=>d.plataforma==='ticto').map(d=>d.faturamento), color:ACC }]);
   }
 }
 
@@ -372,18 +336,15 @@ async function loadTiktok() {
   </div>`;
 }
 
-// ── UTMs ──
 async function loadUTMs() {
   const f = getFilters();
   const dados = await api(`dashboard/por-src?${qs(f)}`);
   if (!dados) return;
-
   document.getElementById('kpi-utms').innerHTML =
     buildKPI('Cliques Totais', '49.1k',  18, '30d') +
     buildKPI('Links Ativos',  '27',      null,'ativos') +
     buildKPI('CPA',           'R$362',   -4, '30d') +
     buildKPI('Tempo Conv.',   '4h 22m',  null,'média');
-
   const rows = dados.map(d => `<tr>
     <td class="bold">${d.produto}</td>
     <td><code>${d.src}</code></td>
@@ -391,7 +352,6 @@ async function loadUTMs() {
     <td class="mono">${fNum(d.vendas)}</td>
     <td class="mono bold">${fBRL(d.faturamento)}</td>
   </tr>`).join('');
-
   document.getElementById('utms-table-wrap').innerHTML = `
     <table class="tbl">
       <thead><tr><th>Produto</th><th>SRC</th><th>Rede</th><th>Conv.</th><th>Receita</th></tr></thead>
@@ -406,33 +366,25 @@ function filterUTMTable() {
   });
 }
 
-// ── COMERCIAL ──
 async function loadComercial() {
   const f = getFilters();
   const data = await api(`comercial/ranking?${qs(f)}`);
   if (!data) return;
-
   const rank = data.ranking;
-  const totalVendas  = rank.reduce((s,v)=>s+(v.total_conversoes||0),0);
-  const totalFat     = rank.reduce((s,v)=>s+(v.faturamento||0),0);
-  const melhor       = rank[0];
-
+  const totalVendas = rank.reduce((s,v)=>s+(v.total_conversoes||0),0);
+  const totalFat    = rank.reduce((s,v)=>s+(v.faturamento||0),0);
+  const melhor      = rank[0];
   document.getElementById('kpi-comercial').innerHTML =
     buildKPI('Total Conversões', fNum(totalVendas),   8,  'período') +
     buildKPI('Faturamento',      fBRL(totalFat),      11, 'período') +
     buildKPI('Ticket Médio',     totalVendas ? fBRL(totalFat/totalVendas) : '—', null,'—') +
     buildKPI('Melhor Vendedor',  melhor?.nome||'—',   null, melhor?fBRL(melhor.faturamento):'') +
     buildKPI('Total Leads',      fNum(rank.reduce((s,v)=>s+(v.total_leads||0),0)), 14,'período');
-
   document.getElementById('velocidade-vendas').textContent =
     `Velocidade atual: ${(totalVendas/30/24).toFixed(1)} conversões/hora`;
-
-  // Ranking table
   const rankRows = rank.map((v,i) => {
     const cls = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
-    const trend = Math.random()>0.4
-      ? '<i class="fas fa-arrow-trend-up trend-up"></i>'
-      : '<i class="fas fa-arrow-trend-down trend-dn"></i>';
+    const trend = Math.random()>0.4 ? '<i class="fas fa-arrow-trend-up trend-up"></i>' : '<i class="fas fa-arrow-trend-down trend-dn"></i>';
     const tagCls = v.taxa_conversao>=15?'tag-up':v.taxa_conversao>=8?'tag-acc':'tag-nt';
     return `<tr>
       <td><span class="rank-badge ${cls}">${i+1}</span></td>
@@ -445,30 +397,19 @@ async function loadComercial() {
       <td>${trend}</td>
     </tr>`;
   }).join('');
-
   document.getElementById('ranking-wrap').innerHTML = `
     <table class="tbl">
       <thead><tr><th>#</th><th>Vendedor</th><th>Conversões</th><th>Faturamento</th><th>Ticket Médio</th><th>Leads</th><th>Taxa Conv.</th><th>Tend.</th></tr></thead>
       <tbody>${rankRows||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--t2);">Nenhum dado no período.</td></tr>'}</tbody>
     </table>`;
-
-  // Evolução
   lineChart('c-vend-evol', DAYS, rank.slice(0,3).map((v,i) => ({
-    label: v.nome.split(' ')[0],
-    color: [ACC,G1,G2][i],
+    label: v.nome.split(' ')[0], color: [ACC,G1,G2][i],
     data: Array.from({length:15}, () => Math.floor(Math.random()*(v.total_conversoes||5)/15))
   })));
-
-  // Pizza plataformas
   const platData = await api(`dashboard/kpis?${qs(f)}`);
   if (platData?.por_plataforma?.length) {
-    donutChart('c-plat-pie-com',
-      platData.por_plataforma.map(p=>p.plataforma),
-      platData.por_plataforma.map(p=>p.faturamento),
-    );
+    donutChart('c-plat-pie-com', platData.por_plataforma.map(p=>p.plataforma), platData.por_plataforma.map(p=>p.faturamento));
   }
-
-  // Heatmap
   buildHeatmap('heatmap-com', rank.map(v=>v.nome.split(' ')[0]));
 }
 
@@ -495,7 +436,6 @@ function buildHeatmap(containerId, labels) {
   });
 }
 
-// ── REGISTROS ──
 async function loadRegistros() {
   const f = getFilters();
   const dados = await api(`registros?${qs({vendedor_id:f.vendedor_id, produto_id:f.produto_id})}`);
@@ -522,25 +462,21 @@ async function loadRegistros() {
     </table>`;
 }
 
-// ── FINANCEIRO ──
 async function loadFinanceiro() {
   const f = getFilters();
   const kpis = await api(`dashboard/kpis?${qs(f)}`);
   if (!kpis) return;
-
   document.getElementById('kpi-fin').innerHTML =
     buildKPI('Fat. Bruto',    fBRL(kpis.faturamento_bruto),   12,'') +
     buildKPI('Fat. Líquido',  fBRL(kpis.faturamento_liquido), 9, '') +
     buildKPI('Lucro Final',   fBRL(kpis.faturamento_liquido*0.64||0), 7,'estimado') +
     buildKPI('Total Taxas',   fBRL(kpis.faturamento_bruto*0.1||0), null,'~10%') +
     buildKPI('Reembolsos',    fBRL(kpis.reembolsos_valor),   null,`${kpis.reembolsos_qtd} pedidos`);
-
   document.getElementById('kpi-fin2').innerHTML =
     buildKPI('Gasto Ads',    fBRL(kpis.faturamento_bruto*0.26||0),  null,'estimado') +
     buildKPI('Impostos',     fBRL(kpis.faturamento_bruto*0.08||0),  null,'~8% bruto') +
     buildKPI('Pend. Pgto.',  fBRL(kpis.faturamento_bruto*0.037||0), null,'pendente') +
     buildKPI('Projeção Mês', fBRL(kpis.faturamento_bruto*1.2||0),   20, 'tendência');
-
   const diario = await api(`dashboard/grafico-diario?${qs(f)}`);
   if (diario) {
     const labels = [...new Set(diario.map(d=>d.dia))].sort().map(d=>d.substring(5).replace('-','/'));
@@ -550,10 +486,8 @@ async function loadFinanceiro() {
       {label:'Líquido', data:bruto.map(v=>v*0.72), color:G1},
     ]);
   }
-
   const porProd = await api(`dashboard/por-produto?${qs(f)}`);
   if (porProd?.length) donutChart('c-fin-prod', porProd.map(p=>p.produto), porProd.map(p=>p.faturamento));
-
   destroyChart('c-fin-ads');
   const elAds = document.getElementById('c-fin-ads');
   if (elAds) {
@@ -563,13 +497,10 @@ async function loadFinanceiro() {
       {label:'TikTok', data:Array.from({length:15},()=>Math.floor(Math.random()*6+2)), backgroundColor:G2, borderRadius:2,stack:'s'},
     ]},options:{...baseOpts(true),plugins:{legend:{labels:{color:'#9898a8',usePointStyle:true,pointStyle:'circle',padding:12}}}}});
   }
-
-  barChart('c-fin-roi',  ['Meta','Google','TikTok','E-mail','Orgânico'],[4.2,3.7,3.1,5.8,4.6], ACC);
+  barChart('c-fin-roi', ['Meta','Google','TikTok','E-mail','Orgânico'],[4.2,3.7,3.1,5.8,4.6], ACC);
   destroyChart('c-fin-reimb');
   const elRe=document.getElementById('c-fin-reimb');
   if(elRe)charts['c-fin-reimb']=new Chart(elRe,{type:'bar',data:{labels:DAYS,datasets:[{data:Array.from({length:15},()=>Math.floor(Math.random()*8+1)),backgroundColor:DN,borderRadius:3}]},options:baseOpts()});
-
-  // Waterfall
   const wrap = document.getElementById('waterfall-wrap');
   if (wrap) {
     const bruto = kpis.faturamento_bruto||0;
@@ -596,11 +527,9 @@ async function loadFinanceiro() {
   }
 }
 
-// ── PRODUTOS ──
 async function loadProdutos() {
   const produtos = await api('produtos');
   if (!produtos) return;
-
   const rows = produtos.map(p=>`<tr>
     <td class="bold">${p.nome_dash}</td>
     <td>${p.nome_completo}</td>
@@ -610,14 +539,11 @@ async function loadProdutos() {
     <td>${p.codigo_lastlink ? `<code>${p.codigo_lastlink}</code>` : '<span style="color:var(--t2)">—</span>'}</td>
     <td><button class="btn btn-ghost btn-sm" onclick="editProduto(${p.id})"><i class="fas fa-pencil"></i></button></td>
   </tr>`).join('');
-
   document.getElementById('produtos-table-wrap').innerHTML=`
     <table class="tbl">
       <thead><tr><th>Nome no Dash</th><th>Nome Completo</th><th>Tipo</th><th>Kiwify</th><th>Ticto</th><th>Lastlink</th><th></th></tr></thead>
       <tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--t2);">Nenhum produto cadastrado.</td></tr>'}</tbody>
     </table>`;
-
-  // Docs webhooks
   document.getElementById('webhook-docs').innerHTML = `
     <div class="card">
       <div class="card-h" style="border-bottom-color:rgba(62,207,142,.2);"><span class="card-title" style="color:var(--up);">Kiwify</span><span class="tag tag-up">POST</span></div>
@@ -663,7 +589,6 @@ async function loadProdutos() {
     </div>`;
 }
 
-// ── INTEGRAÇÕES ──
 async function loadInteg() {
   const status = await api('dashboard/webhooks-status');
   const intgs = [
@@ -696,15 +621,13 @@ async function testWebhook(plat) {
     : plat==='ticto'
     ? {tipo:'purchase.approved',venda:{produto_id:'test',valor:997}}
     : {event_type:'sale_approved',sale:{product_id:'test',amount:99700}};
-  const r = await fetch(`/api/webhooks/${plat}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const r = await fetch(`/api/webhooks/${plat}`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const d = await r.json();
   toast(d.ok ? `Webhook ${plat} respondeu OK!` : `Erro: ${d.erro}`,'ok');
 }
 
-// ── CONFIG ──
 async function loadConfig() {
   const [admins, vendedores] = await Promise.all([ api('auth/admins'), api('vendedores') ]);
-
   if (admins) {
     document.getElementById('admins-list').innerHTML = admins.map(a=>`
       <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b0);">
@@ -713,7 +636,6 @@ async function loadConfig() {
         <span class="tag ${a.ativo?'tag-up':'tag-nt'}">${a.ativo?'Ativo':'Inativo'}</span>
       </div>`).join('');
   }
-
   if (vendedores) {
     document.getElementById('vendedores-list').innerHTML = vendedores.map(v=>`
       <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b0);">
@@ -730,7 +652,6 @@ function copyLink(slug) {
   toast(`Link copiado: /${slug}`,'ok');
 }
 
-// ── MODAIS ──
 function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 function closeModalOutside(e, id) { if(e.target.id===id) closeModal(id); }
@@ -745,7 +666,7 @@ async function salvarProduto() {
     codigo_lastlink:document.getElementById('ap-lastlink').value,
   };
   if (!body.nome_completo || !body.nome_dash) { toast('Nome completo e nome do dashboard são obrigatórios','err'); return; }
-  const r = await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r = await fetch('/api/produtos',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d = await r.json();
   if (!r.ok) { toast(d.erro||'Erro ao salvar','err'); return; }
   toast('Produto salvo!','ok');
@@ -757,7 +678,7 @@ async function salvarProduto() {
 async function salvarVendedor() {
   const body = { nome:document.getElementById('av-nome').value, email:document.getElementById('av-email').value };
   if (!body.nome) { toast('Nome obrigatório','err'); return; }
-  const r = await fetch('/api/vendedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r = await fetch('/api/vendedores',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d = await r.json();
   if (!r.ok) { toast(d.erro||'Erro','err'); return; }
   toast(`Vendedor criado! Link: /${d.slug}`,'ok');
@@ -769,7 +690,7 @@ async function salvarVendedor() {
 async function salvarAdmin() {
   const body = { nome:document.getElementById('aa-nome').value, email:document.getElementById('aa-email').value, senha:document.getElementById('aa-senha').value };
   if (!body.nome||!body.email||!body.senha) { toast('Todos os campos são obrigatórios','err'); return; }
-  const r = await fetch('/api/auth/admins',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r = await fetch('/api/auth/admins',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d = await r.json();
   if (!r.ok) { toast(d.erro||'Erro','err'); return; }
   toast('Administrador criado!','ok');
@@ -777,25 +698,21 @@ async function salvarAdmin() {
   loadConfig();
 }
 
-// ── Logout ──
 async function logout() {
-  await fetch('/api/auth/logout',{method:'POST'});
+  await fetch('/api/auth/logout',{method:'POST',credentials:'include'});
   window.location.href = '/login';
 }
 
-// ── Toast ──
 function toast(msg, tipo='ok') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = `toast show ${tipo}`;
   setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// ── Export CSV ──
 async function exportCSV(endpoint) {
   toast('Exportação CSV — em breve','nt');
 }
 
-// ── Auto-refresh seletores ──
 async function refreshSelectores() {
   const [produtos, vendedores] = await Promise.all([api('produtos'), api('vendedores')]);
   const fProd = document.getElementById('f-produto');
@@ -810,7 +727,6 @@ async function refreshSelectores() {
   }
 }
 
-// ── Carrega admin logado ──
 async function loadMe() {
   const data = await api('auth/me');
   if (data?.admin) {
@@ -819,12 +735,10 @@ async function loadMe() {
   }
 }
 
-// ── INIT ──
 (async () => {
   await loadMe();
   await refreshSelectores();
   loadResumo();
   updateTimestamp();
-  // Auto-refresh a cada 60s
   setInterval(() => { loadPage(currentPage); updateTimestamp(); }, 60000);
 })();
