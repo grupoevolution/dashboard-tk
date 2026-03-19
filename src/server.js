@@ -33,8 +33,10 @@ app.use('/api/auth/login', rateLimit({ windowMs: 15*60*1000, max: 20, message: {
 app.use('/api/webhooks',   rateLimit({ windowMs: 60*1000, max: 300 }));
 app.use('/api/',           rateLimit({ windowMs: 60*1000, max: 500 }));
 
-// ── Arquivos estáticos ──
-app.use(express.static(path.join(__dirname, '../public')));
+// ── Arquivos estáticos (CSS, JS) — SEM index.html ──
+app.use('/css',    express.static(path.join(__dirname, '../public/css')));
+app.use('/js',     express.static(path.join(__dirname, '../public/js')));
+app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
 
 // ── Rotas da API ──
 app.use('/api/auth',      authRoutes);
@@ -42,27 +44,25 @@ app.use('/api/webhooks',  webhookRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api',           crudRoutes);
 
-// ── Rotas de página ──
-
-// Login (público)
+// ── Login (público) ──
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
-// Página do vendedor (público) — ex: /lucasmoreira
+// ── Página do vendedor (público) — ex: /lucasmoreira ──
 app.get('/:slug([a-z0-9]+)', (req, res) => {
   const { db } = require('./db/database');
   const v = db.prepare('SELECT id FROM vendedores WHERE slug=? AND ativo=1').get(req.params.slug);
-  if (!v) return res.redirect('/');
+  if (!v) return res.redirect('/login');
   res.sendFile(path.join(__dirname, '../public/vendedor.html'));
 });
 
-// Dashboard (protegido)
+// ── Dashboard (protegido) ──
 app.get('/', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Catch-all: redireciona para login
+// ── Catch-all ──
 app.get('*', (req, res) => res.redirect('/login'));
 
 // ── Inicialização ──
