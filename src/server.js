@@ -16,6 +16,9 @@ const authMiddleware  = require('./middleware/auth');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Trust proxy (obrigatório no EasyPanel / Nginx reverse proxy) ──
+app.set('trust proxy', 1);
+
 // ── Segurança e logging ──
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
