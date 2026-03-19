@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build: .
+    container_name: performance-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-mude_essa_chave_em_producao_use_uma_string_longa}
+      JWT_EXPIRES_IN: 7d
+      DB_PATH: /app/data/dashboard.db
+    volumes:
+      - dashboard_data:/app/data
+
+volumes:
+  dashboard_data:
+    driver: local

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Registro de Atendimentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0e;--s1:#17171b;--s2:#1e1e23;--b0:#2a2a32;--t0:#f2f2f5;--t1:#9898a8;--t2:#5a5a6a;--acc:#5b7cff;--up:#3ecf8e;--dn:#f06060;--yn:#e8a030;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--t0);min-height:100vh;padding:0 0 40px;}
+.topbar{background:var(--s1);border-bottom:1px solid var(--b0);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;margin-bottom:0;}
+.logo-sq{width:26px;height:26px;background:var(--acc);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;}
+.page-wrap{max-width:680px;margin:32px auto;padding:0 16px;}
+.seller-header{display:flex;align-items:center;gap:14px;margin-bottom:28px;}
+.av{width:46px;height:46px;border-radius:12px;background:var(--s2);border:1px solid var(--b0);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--t1);}
+.seller-name{font-size:20px;font-weight:700;}
+.seller-sub{font-size:12.5px;color:var(--t2);}
+.card{background:var(--s1);border:1px solid var(--b0);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--b0);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
+.card-b{padding:18px;}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;}
+.fg input,.fg select,.fg textarea{background:var(--s2);border:1px solid var(--b0);border-radius:6px;padding:9px 12px;font-size:13px;color:var(--t0);font-family:inherit;outline:none;transition:border-color .12s;width:100%;}
+.fg input:focus,.fg select:focus{border-color:var(--acc);}
+.fg input::placeholder{color:var(--t2);}
+.fg select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5a6a'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+.fg select option{background:#1e1e23;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:6px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;}
+.btn-acc{background:var(--acc);color:#fff;width:100%;height:42px;}
+.btn-acc:hover{opacity:.88;}
+.btn-acc:disabled{opacity:.5;cursor:not-allowed;}
+.btn-ghost{background:var(--s2);border:1px solid var(--b0);color:var(--t1);}
+.btn-ghost:hover{color:var(--t0);}
+.date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.date-row .fg{flex:1;min-width:160px;margin-bottom:0;}
+tbl{width:100%;border-collapse:collapse;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--t2);padding:10px 14px;border-bottom:1px solid var(--b0);}
+td{padding:9px 14px;font-size:12.5px;color:var(--t1);border-bottom:1px solid var(--b0);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--s2);}
+td.bold{color:var(--t0);font-weight:600;}
+td.mono{font-family:'Geist Mono',monospace;font-size:12px;}
+.tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600;}
+.tag-up{background:rgba(62,207,142,.1);color:var(--up);}
+.tag-acc{background:rgba(91,124,255,.12);color:var(--acc);}
+.tag-nt{background:rgba(90,90,106,.15);color:var(--t2);}
+.toast{position:fixed;bottom:24px;right:24px;background:#2a2a32;border:1px solid var(--b0);border-radius:8px;padding:12px 18px;font-size:13px;display:none;z-index:999;gap:8px;align-items:center;}
+.toast.show{display:flex;}
+.toast.ok{border-color:rgba(62,207,142,.3);color:var(--up);}
+.toast.err{border-color:rgba(240,96,96,.3);color:var(--dn);}
+.loading{text-align:center;padding:30px;color:var(--t2);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-sq"><svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+  <span style="font-size:13.5px;font-weight:600;">Dashboard</span>
+  <span style="font-size:12px;color:var(--t2);margin-left:4px;">— Registro de Atendimentos</span>
+</div>
+
+<div class="page-wrap">
+  <div class="seller-header">
+    <div class="av" id="av">...</div>
+    <div>
+      <div class="seller-name" id="nome">Carregando...</div>
+      <div class="seller-sub" id="data-atual"></div>
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <div class="card">
+    <div class="card-h">Data do Registro</div>
+    <div class="card-b">
+      <div class="date-row">
+        <div class="fg"><label>Data</label><input type="date" id="data-reg"></div>
+        <button class="btn btn-ghost" onclick="setDate(0)">Hoje</button>
+        <button class="btn btn-ghost" onclick="setDate(-1)">Ontem</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="card">
+    <div class="card-h">Novo Registro</div>
+    <div class="card-b">
+      <div class="g2">
+        <div class="fg"><label>Produto</label>
+          <select id="produto_id"><option value="">Carregando...</option></select>
+        </div>
+        <div class="fg"><label>Canal / Fonte</label>
+          <select id="canal">
+            <option value="whatsapp_organico">WhatsApp Orgânico</option>
+            <option value="meta_ads">Meta Ads</option>
+            <option value="google_ads">Google Ads</option>
+            <option value="tiktok_ads">TikTok Ads</option>
+            <option value="instagram_organico">Instagram Orgânico</option>
+            <option value="email">E-mail / Lista</option>
+            <option value="indicacao">Indicação</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="fg"><label>Leads Atendidos</label><input type="number" id="qtd_leads" placeholder="Ex: 45" min="0"></div>
+        <div class="fg"><label>Conversões (vendas)</label><input type="number" id="qtd_conv" placeholder="Ex: 8" min="0"></div>
+        <div class="fg"><label>Valor Total (R$)</label><input type="number" id="valor" placeholder="Ex: 7976.00" min="0" step="0.01"></div>
+        <div class="fg"><label>Status</label>
+          <select id="status">
+            <option value="concluido">Concluído</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="follow_up">Aguardando follow-up</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Observações</label><input type="text" id="obs" placeholder="Alguma nota sobre o período..."></div>
+      <button class="btn btn-acc" id="btn-salvar" onclick="salvar()">Salvar Registro</button>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="card">
+    <div class="card-h">Meus Últimos Registros</div>
+    <div id="historico-wrap"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const slug = window.location.pathname.replace(/\//g,'');
+let vendedorId = null;
+
+async function init() {
+  // data atual
+  const now = new Date();
+  document.getElementById('data-atual').textContent =
+    now.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  setDate(0);
+
+  // busca vendedor
+  try {
+    const r = await fetch(`/api/vendedores/${slug}`);
+    if (!r.ok) { document.getElementById('nome').textContent = 'Vendedor não encontrado'; return; }
+    const v = await r.json();
+    vendedorId = v.id;
+    document.getElementById('nome').textContent = v.nome;
+    document.getElementById('av').textContent = v.nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    document.title = `${v.nome} — Registro`;
+  } catch { document.getElementById('nome').textContent = 'Erro ao carregar'; return; }
+
+  // carrega produtos
+  try {
+    const r = await fetch('/api/produtos');
+    const produtos = await r.json();
+    const sel = document.getElementById('produto_id');
+    sel.innerHTML = '<option value="">Selecione o produto</option>';
+    produtos.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.nome_dash;
+      sel.appendChild(o);
+    });
+  } catch {}
+
+  carregarHistorico();
+}
+
+function setDate(offset) {
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  document.getElementById('data-reg').value = d.toISOString().split('T')[0];
+}
+
+async function salvar() {
+  const btn = document.getElementById('btn-salvar');
+  const body = {
+    slug,
+    produto_id: document.getElementById('produto_id').value || null,
+    data_registro: document.getElementById('data-reg').value,
+    canal: document.getElementById('canal').value,
+    qtd_leads: document.getElementById('qtd_leads').value,
+    qtd_conversoes: document.getElementById('qtd_conv').value,
+    valor_total: document.getElementById('valor').value,
+    status: document.getElementById('status').value,
+    observacao: document.getElementById('obs').value,
+  };
+  if (!body.data_registro) { toast('Selecione a data.','err'); return; }
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const r = await fetch('/api/registros', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok) { toast(d.erro||'Erro ao salvar','err'); return; }
+    toast('Registro salvo com sucesso!','ok');
+    // limpa campos numéricos
+    ['qtd_leads','qtd_conv','valor','obs'].forEach(id => document.getElementById(id).value='');
+    carregarHistorico();
+  } catch { toast('Erro de conexão','err'); }
+  finally { btn.disabled=false; btn.textContent='Salvar Registro'; }
+}
+
+async function carregarHistorico() {
+  const wrap = document.getElementById('historico-wrap');
+  try {
+    const r = await fetch(`/api/registros/vendedor/${slug}`);
+    const lista = await r.json();
+    if (!lista.length) { wrap.innerHTML='<div class="loading">Nenhum registro ainda.</div>'; return; }
+    const canais = { whatsapp_organico:'WhatsApp', meta_ads:'Meta Ads', google_ads:'Google Ads',
+      tiktok_ads:'TikTok', instagram_organico:'Instagram', email:'E-mail', indicacao:'Indicação', outro:'Outro' };
+    wrap.innerHTML = `<div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Data</th><th>Produto</th><th>Canal</th><th>Leads</th><th>Conv.</th><th>Taxa</th><th>Valor</th></tr></thead>
+        <tbody>
+          ${lista.map(reg => {
+            const taxa = reg.qtd_leads > 0 ? ((reg.qtd_conversoes/reg.qtd_leads)*100).toFixed(1) : 0;
+            const tagCls = taxa >= 15 ? 'tag-up' : taxa >= 8 ? 'tag-acc' : 'tag-nt';
+            const dataFmt = reg.data_registro.substring(5).replace('-','/');
+            return `<tr>
+              <td class="mono">${dataFmt}</td>
+              <td class="bold">${reg.produto_nome||'—'}</td>
+              <td>${canais[reg.canal]||reg.canal||'—'}</td>
+              <td class="mono">${reg.qtd_leads}</td>
+              <td class="mono">${reg.qtd_conversoes}</td>
+              <td><span class="tag ${tagCls}">${taxa}%</span></td>
+              <td class="mono">R$${Number(reg.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:0})}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } catch { wrap.innerHTML='<div class="loading">Erro ao carregar histórico.</div>'; }
+}
+
+function toast(msg, tipo='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast show ${tipo}`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+init();
+</script>
+</body>
+</html>

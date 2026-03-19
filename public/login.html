@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Login — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Geist',sans-serif;background:#0c0c0e;color:#f2f2f5;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+.box{background:#17171b;border:1px solid #2a2a32;border-radius:12px;padding:40px;width:100%;max-width:380px;}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;}
+.logo-sq{width:32px;height:32px;background:#5b7cff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;}
+.logo-text{font-size:16px;font-weight:700;}
+h2{font-size:20px;font-weight:700;margin-bottom:6px;}
+.sub{font-size:13px;color:#5a5a6a;margin-bottom:28px;}
+.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.fg label{font-size:11.5px;font-weight:600;color:#9898a8;text-transform:uppercase;letter-spacing:.4px;}
+.fg input{background:#1e1e23;border:1px solid #2a2a32;border-radius:6px;padding:10px 12px;font-size:13.5px;color:#f2f2f5;font-family:inherit;outline:none;transition:border-color .12s;}
+.fg input:focus{border-color:#5b7cff;}
+.btn{width:100%;padding:11px;background:#5b7cff;border:none;border-radius:6px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s;margin-top:6px;}
+.btn:hover{opacity:.88;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.err{color:#f06060;font-size:12.5px;margin-top:10px;display:none;padding:8px 12px;background:rgba(240,96,96,.08);border-radius:6px;border:1px solid rgba(240,96,96,.15);}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">
+    <div class="logo-sq"><svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+    <span class="logo-text">Dashboard</span>
+  </div>
+  <h2>Entrar</h2>
+  <p class="sub">Acesso restrito a administradores</p>
+  <div class="fg">
+    <label>E-mail</label>
+    <input type="email" id="email" placeholder="admin@dashboard.com" autocomplete="email">
+  </div>
+  <div class="fg">
+    <label>Senha</label>
+    <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+  </div>
+  <button class="btn" id="btn-login" onclick="login()">Entrar</button>
+  <div class="err" id="err"></div>
+</div>
+<script>
+document.getElementById('senha').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const senha = document.getElementById('senha').value;
+  const err   = document.getElementById('err');
+  const btn   = document.getElementById('btn-login');
+  if (!email || !senha) { showErr('Preencha e-mail e senha.'); return; }
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  err.style.display = 'none';
+  try {
+    const r = await fetch('/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, senha })
+    });
+    const d = await r.json();
+    if (!r.ok) { showErr(d.erro || 'Credenciais inválidas'); return; }
+    window.location.href = '/';
+  } catch { showErr('Erro de conexão. Tente novamente.'); }
+  finally { btn.disabled=false; btn.textContent='Entrar'; }
+}
+
+function showErr(msg) {
+  const e = document.getElementById('err');
+  e.textContent = msg; e.style.display = 'block';
+}
+</script>
+</body>
+</html>

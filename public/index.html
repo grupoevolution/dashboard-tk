@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard — Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="/css/dash.css">
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-sq"><i class="fas fa-chart-simple"></i></div>
+    <span class="logo-name">Dashboard <em>PERF</em></span>
+  </div>
+  <div class="topbar-filters" id="global-filters">
+    <div class="f-group">
+      <span class="f-label">Período</span>
+      <select class="f-select" id="f-periodo" onchange="applyFilters()">
+        <option value="hoje">Hoje</option>
+        <option value="7d">7 dias</option>
+        <option value="15d">15 dias</option>
+        <option value="30d" selected>30 dias</option>
+        <option value="60d">60 dias</option>
+        <option value="90d">90 dias</option>
+        <option value="mes_atual">Mês atual</option>
+      </select>
+    </div>
+    <div class="f-divider"></div>
+    <div class="f-group">
+      <span class="f-label">Fonte</span>
+      <select class="f-select" id="f-fonte" onchange="applyFilters()">
+        <option value="">Todas</option>
+        <option value="facebook">Meta / Facebook</option>
+        <option value="google">Google Ads</option>
+        <option value="tiktok">TikTok Ads</option>
+        <option value="instagram">Instagram</option>
+        <option value="organico">Orgânico</option>
+      </select>
+    </div>
+    <div class="f-divider"></div>
+    <div class="f-group">
+      <span class="f-label">Plataforma</span>
+      <select class="f-select" id="f-plataforma" onchange="applyFilters()">
+        <option value="">Todas</option>
+        <option value="kiwify">Kiwify</option>
+        <option value="ticto">Ticto</option>
+        <option value="lastlink">Lastlink</option>
+      </select>
+    </div>
+    <div class="f-divider"></div>
+    <div class="f-group">
+      <span class="f-label">Produto</span>
+      <select class="f-select" id="f-produto" onchange="applyFilters()" style="min-width:130px;">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div class="f-divider"></div>
+    <div class="f-group">
+      <span class="f-label">Vendedor</span>
+      <select class="f-select" id="f-vendedor" onchange="applyFilters()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="upd-badge"><span class="upd-dot"></span><span id="upd-text">Aguardando...</span></span>
+    <button class="btn btn-ghost" onclick="applyFilters()"><i class="fas fa-rotate"></i> Atualizar</button>
+    <button class="btn btn-acc" onclick="showPage('config')"><i class="fas fa-gear"></i></button>
+    <button class="btn btn-ghost" onclick="logout()"><i class="fas fa-right-from-bracket"></i></button>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body-wrap">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="nav-section">Visão Geral</div>
+  <div class="nav-item active" onclick="showPage('resumo',this)"><i class="fas fa-grid-2"></i> Resumo</div>
+
+  <div class="nav-section">Tráfego Pago</div>
+  <div class="nav-item" onclick="showPage('meta',this)"><i class="fab fa-facebook-f"></i> Meta Ads</div>
+  <div class="nav-item" onclick="showPage('google',this)"><i class="fab fa-google"></i> Google Ads</div>
+  <div class="nav-item" onclick="showPage('tiktok',this)"><i class="fab fa-tiktok"></i> TikTok Ads</div>
+  <div class="nav-item" onclick="showPage('utms',this)"><i class="fas fa-crosshairs"></i> UTMs</div>
+
+  <div class="nav-section">Comercial</div>
+  <div class="nav-item" onclick="showPage('comercial',this)"><i class="fas fa-users"></i> Vendedores <span class="nav-badge live" id="badge-live">AO VIVO</span></div>
+  <div class="nav-item" onclick="showPage('registros',this)"><i class="fas fa-list-check"></i> Registros</div>
+
+  <div class="nav-section">Financeiro</div>
+  <div class="nav-item" onclick="showPage('financeiro',this)"><i class="fas fa-circle-dollar-to-slot"></i> Financeiro</div>
+
+  <div class="nav-section">Sistema</div>
+  <div class="nav-item" onclick="showPage('produtos',this)"><i class="fas fa-box"></i> Produtos</div>
+  <div class="nav-item" onclick="showPage('integ',this)"><i class="fas fa-plug"></i> Integrações</div>
+  <div class="nav-item" onclick="showPage('config',this)"><i class="fas fa-gear"></i> Configurações</div>
+
+  <div class="sidebar-bottom">
+    <div class="user-row">
+      <div class="u-av" id="u-av">AD</div>
+      <div>
+        <div class="u-name" id="u-nome">Admin</div>
+        <div class="u-role">Administrador</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main" id="main">
+
+<!-- ══ RESUMO ══ -->
+<div class="page active" id="pg-resumo">
+  <div class="kpi-row" id="kpi-resumo">
+    <div class="kpi skeleton"><div class="kpi-val">—</div></div>
+    <div class="kpi skeleton"><div class="kpi-val">—</div></div>
+    <div class="kpi skeleton"><div class="kpi-val">—</div></div>
+    <div class="kpi skeleton"><div class="kpi-val">—</div></div>
+  </div>
+  <div class="g21">
+    <div class="card">
+      <div class="card-h"><span class="card-title">Faturamento Diário</span>
+        <div class="card-actions"><button class="btn btn-ghost btn-sm" onclick="exportCSV('grafico-diario')"><i class="fas fa-download"></i></button></div>
+      </div>
+      <div class="card-b"><div class="ch ch-240"><canvas id="c-fat-diario"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="card-title">Por Plataforma</span></div>
+      <div class="card-b">
+        <div style="height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;"><canvas id="c-plat-donut"></canvas></div>
+        <div id="plat-lista" class="src-list"></div>
+      </div>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="card">
+      <div class="card-h"><span class="card-title">Vendas por Horário</span></div>
+      <div class="card-b"><div class="ch ch-160"><canvas id="c-horario"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="card-title">Vendas por Dia da Semana</span></div>
+      <div class="card-b"><div class="ch ch-160"><canvas id="c-semana"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="card-title">Webhooks</span><span class="nav-badge live" style="margin:0;">AO VIVO</span></div>
+      <div class="card-b tight" id="wh-status-list">
+        <div class="loading-small">Verificando...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ META ADS ══ -->
+<div class="page" id="pg-meta">
+  <div class="kpi-row-6" id="kpi-meta"></div>
+  <div class="g21" style="margin-bottom:12px;">
+    <div class="card">
+      <div class="card-h"><span class="card-title">Funil de Conversão — Meta Ads</span></div>
+      <div class="card-b" id="funil-meta"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card">
+        <div class="card-h"><span class="card-title">Método de Pagamento</span></div>
+        <div class="card-b"><div class="ch ch-140"><canvas id="c-pgto-meta"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-title">Por Posicionamento</span></div>
+        <div class="card-b tight" id="pos-meta"></div>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-h"><span class="card-title">Gasto vs Faturamento</span></div><div class="card-b"><div class="ch ch-200"><canvas id="c-gasto-fat-meta"></canvas></div></div></div>
+    <div class="card"><div class="card-h"><span class="card-title">Vendas por Produto</span></div><div class="card-b"><div class="ch ch-200"><canvas id="c-prod-meta"></canvas></div></div></div>
+  </div>
+</div>
+
+<!-- ══ GOOGLE ADS ══ -->
+<div class="page" id="pg-google">
+  <div class="kpi-row-6" id="kpi-google"></div>
+  <div class="g21">
+    <div class="card"><div class="card-h"><span class="card-title">Funil — Google Ads</span></div><div class="card-b" id="funil-google"></div></div>
+    <div class="card"><div class="card-h"><span class="card-title">Evolução Diária</span></div><div class="card-b"><div class="ch ch-280"><canvas id="c-google-evol"></canvas></div></div></div>
+  </div>
+</div>
+
+<!-- ══ TIKTOK ADS ══ -->
+<div class="page" id="pg-tiktok">
+  <div class="kpi-row-6" id="kpi-tiktok"></div>
+  <div class="g2">
+    <div class="card"><div class="card-h"><span class="card-title">Funil — TikTok Ads</span></div><div class="card-b" id="funil-tiktok"></div></div>
+    <div class="card"><div class="card-h"><span class="card-title">Posicionamento TikTok</span></div><div class="card-b tight" id="pos-tiktok"></div></div>
+  </div>
+</div>
+
+<!-- ══ UTMs ══ -->
+<div class="page" id="pg-utms">
+  <div class="kpi-row" id="kpi-utms" style="grid-template-columns:repeat(4,1fr);"></div>
+  <div class="card">
+    <div class="card-h">
+      <span class="card-title">Cruzamento — Produto × SRC × Rede</span>
+      <div class="card-actions">
+        <input type="text" placeholder="Filtrar..." id="utm-search" oninput="filterUTMTable()" style="background:var(--bg-3);border:1px solid var(--b0);border-radius:var(--rs);padding:5px 10px;font-size:12px;color:var(--t0);font-family:inherit;outline:none;width:160px;">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('por-src')"><i class="fas fa-download"></i> CSV</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;" id="utms-table-wrap">
+      <div class="loading-small">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMERCIAL ══ -->
+<div class="page" id="pg-comercial">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div>
+      <div style="font-size:16px;font-weight:700;">Equipe de Vendas</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:2px;" id="velocidade-vendas">Carregando velocidade...</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="exportCSV('comercial/ranking')"><i class="fas fa-download"></i> Exportar</button>
+      <button class="btn btn-acc" onclick="openModal('modal-add-vendedor')"><i class="fas fa-plus"></i> Vendedor</button>
+    </div>
+  </div>
+  <div class="kpi-row" id="kpi-comercial" style="grid-template-columns:repeat(5,1fr);"></div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-h"><span class="card-title">Ranking de Vendedores</span></div>
+    <div style="overflow-x:auto;" id="ranking-wrap"><div class="loading-small">Carregando...</div></div>
+  </div>
+  <div class="g21">
+    <div class="card"><div class="card-h"><span class="card-title">Evolução Diária por Vendedor</span></div><div class="card-b"><div class="ch ch-200"><canvas id="c-vend-evol"></canvas></div></div></div>
+    <div class="card"><div class="card-h"><span class="card-title">Ticto vs Kiwify vs Lastlink</span></div><div class="card-b"><div class="ch ch-200" style="display:flex;align-items:center;justify-content:center;"><canvas id="c-plat-pie-com"></canvas></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><span class="card-title">Heatmap — Horário × Vendedor</span></div>
+    <div class="card-b"><div id="heatmap-com"></div></div>
+  </div>
+</div>
+
+<!-- ══ REGISTROS ══ -->
+<div class="page" id="pg-registros">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-size:16px;font-weight:700;">Registros de Leads</div>
+    <button class="btn btn-ghost" onclick="exportCSV('registros')"><i class="fas fa-download"></i> Exportar CSV</button>
+  </div>
+  <div class="card">
+    <div style="overflow-x:auto;" id="registros-wrap"><div class="loading-small">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- ══ FINANCEIRO ══ -->
+<div class="page" id="pg-financeiro">
+  <div style="font-size:16px;font-weight:700;margin-bottom:14px;">Financeiro</div>
+  <div class="kpi-row" id="kpi-fin" style="grid-template-columns:repeat(5,1fr);"></div>
+  <div class="kpi-row" id="kpi-fin2" style="grid-template-columns:repeat(4,1fr);margin-top:-4px;"></div>
+  <div class="g21" style="margin-bottom:12px;">
+    <div class="card"><div class="card-h"><span class="card-title">Faturamento — Bruto vs Líquido</span></div><div class="card-b"><div class="ch ch-220"><canvas id="c-fin-evol"></canvas></div></div></div>
+    <div class="card"><div class="card-h"><span class="card-title">Receita por Produto</span></div><div class="card-b"><div class="ch ch-220" style="display:flex;align-items:center;justify-content:center;"><canvas id="c-fin-prod"></canvas></div></div></div>
+  </div>
+  <div class="g3">
+    <div class="card"><div class="card-h"><span class="card-title">Gasto Ads por Fonte</span></div><div class="card-b"><div class="ch ch-180"><canvas id="c-fin-ads"></canvas></div></div></div>
+    <div class="card"><div class="card-h"><span class="card-title">ROI por Fonte</span></div><div class="card-b"><div class="ch ch-180"><canvas id="c-fin-roi"></canvas></div></div></div>
+    <div class="card"><div class="card-h"><span class="card-title">Reembolsos</span></div><div class="card-b"><div class="ch ch-180"><canvas id="c-fin-reimb"></canvas></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-h"><span class="card-title">Fluxo de Caixa</span></div>
+    <div class="card-b" id="waterfall-wrap"></div>
+  </div>
+</div>
+
+<!-- ══ PRODUTOS ══ -->
+<div class="page" id="pg-produtos">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <div style="font-size:16px;font-weight:700;">Produtos & Mapeamento</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:2px;">Vincule os códigos de cada plataforma para identificar conversões</div>
+    </div>
+    <button class="btn btn-acc" onclick="openModal('modal-add-produto')"><i class="fas fa-plus"></i> Adicionar Produto</button>
+  </div>
+  <div class="card" style="margin-bottom:20px;">
+    <div style="overflow-x:auto;" id="produtos-table-wrap"><div class="loading-small">Carregando...</div></div>
+  </div>
+
+  <!-- DOCS WEBHOOKS -->
+  <div style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-book" style="color:var(--acc);"></i> Documentação dos Webhooks</div>
+  <div class="g3" id="webhook-docs"></div>
+</div>
+
+<!-- ══ INTEGRAÇÕES ══ -->
+<div class="page" id="pg-integ">
+  <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Integrações & Webhooks</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;" id="integ-cards"></div>
+</div>
+
+<!-- ══ CONFIG ══ -->
+<div class="page" id="pg-config">
+  <div style="font-size:16px;font-weight:700;margin-bottom:20px;">Configurações</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-h"><span class="card-title">Administradores</span>
+        <button class="btn btn-acc btn-sm" onclick="openModal('modal-add-admin')"><i class="fas fa-plus"></i> Adicionar</button>
+      </div>
+      <div class="card-b" id="admins-list"><div class="loading-small">Carregando...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="card-title">Vendedores</span>
+        <button class="btn btn-acc btn-sm" onclick="openModal('modal-add-vendedor')"><i class="fas fa-plus"></i> Adicionar</button>
+      </div>
+      <div class="card-b" id="vendedores-list"><div class="loading-small">Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ══ MODALS ══ -->
+<div class="modal-overlay" id="modal-add-produto" onclick="closeModalOutside(event,'modal-add-produto')">
+  <div class="modal">
+    <div class="modal-h"><span class="modal-title">Adicionar Produto</span><button class="modal-close" onclick="closeModal('modal-add-produto')"><i class="fas fa-xmark"></i></button></div>
+    <div class="modal-b">
+      <div class="fg"><label>Nome Completo</label><input type="text" id="ap-nome-completo" placeholder="Ex: TikTok Shop IA — Curso Completo"></div>
+      <div class="fg"><label>Nome no Dashboard</label><input type="text" id="ap-nome-dash" placeholder="Ex: TT SHOP IA"></div>
+      <div class="fg"><label>Categoria</label><select id="ap-categoria"><option>Curso</option><option>Mentoria</option><option>Assinatura</option><option>Vitalício</option><option>Outro</option></select></div>
+      <div style="background:var(--bg-3);border:1px solid var(--b0);border-radius:8px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11.5px;font-weight:600;color:var(--t1);margin-bottom:12px;"><i class="fas fa-link" style="color:var(--acc);margin-right:5px;"></i> Códigos por Plataforma</div>
+        <div class="fg"><label style="color:var(--up);">Código Kiwify <span style="color:var(--t2);font-size:10px;font-weight:400;">(campo: data.product.id)</span></label><input type="text" id="ap-kiwify" placeholder="Ex: prod_abc123xyz"></div>
+        <div class="fg"><label style="color:var(--dn);">Código Ticto <span style="color:var(--t2);font-size:10px;font-weight:400;">(campo: venda.produto_id)</span></label><input type="text" id="ap-ticto" placeholder="Ex: 12345"></div>
+        <div class="fg"><label style="color:#a78bfa;">Código Lastlink <span style="color:var(--t2);font-size:10px;font-weight:400;">(campo: sale.product_id)</span></label><input type="text" id="ap-lastlink" placeholder="Ex: LL-98765"></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-add-produto')">Cancelar</button>
+        <button class="btn btn-acc" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-vendedor" onclick="closeModalOutside(event,'modal-add-vendedor')">
+  <div class="modal">
+    <div class="modal-h"><span class="modal-title">Adicionar Vendedor</span><button class="modal-close" onclick="closeModal('modal-add-vendedor')"><i class="fas fa-xmark"></i></button></div>
+    <div class="modal-b">
+      <div class="fg"><label>Nome</label><input type="text" id="av-nome" placeholder="Ex: Lucas Moreira"></div>
+      <div class="fg"><label>E-mail (opcional)</label><input type="email" id="av-email" placeholder="Ex: lucas@equipe.com"></div>
+      <div style="background:var(--bg-3);border:1px solid var(--b0);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--t2);margin-bottom:12px;"><i class="fas fa-circle-info" style="color:var(--acc);margin-right:5px;"></i> O link da página será gerado automaticamente a partir do nome. Ex: <strong style="color:var(--acc);">site.com/lucasmoreira</strong></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-add-vendedor')">Cancelar</button>
+        <button class="btn btn-acc" onclick="salvarVendedor()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-admin" onclick="closeModalOutside(event,'modal-add-admin')">
+  <div class="modal">
+    <div class="modal-h"><span class="modal-title">Adicionar Administrador</span><button class="modal-close" onclick="closeModal('modal-add-admin')"><i class="fas fa-xmark"></i></button></div>
+    <div class="modal-b">
+      <div class="fg"><label>Nome</label><input type="text" id="aa-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label>E-mail</label><input type="email" id="aa-email" placeholder="email@empresa.com"></div>
+      <div class="fg"><label>Senha</label><input type="password" id="aa-senha" placeholder="Mínimo 8 caracteres"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-add-admin')">Cancelar</button>
+        <button class="btn btn-acc" onclick="salvarAdmin()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/dash.js"></script>
+</body>
+</html>
